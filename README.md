@@ -90,7 +90,6 @@ image-vector-poc/
 |       |-- upload.html
 |       |-- cleanup.html
 |       |-- vectorize.html
-|       |-- legacy.html
 |
 |-- storage/
     |-- uploads/
@@ -162,18 +161,6 @@ You will see the new drag and drop upload page. From there:
 3. Tune cleanup sliders, click Update Preview, then click Continue to Vectorize
 4. Pick a preset and tune vector sliders, then click Update Preview
 5. Choose SVG or PDF and click Download
-
-### Optional Legacy Single Page Tool
-
-The original single page editor is still available at:
-
-~~~
-http://localhost:8000/legacy
-~~~
-
-This is useful for fast iteration on a single image without page transitions.
-
----
 
 ## API
 

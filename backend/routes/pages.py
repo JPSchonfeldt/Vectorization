@@ -23,14 +23,6 @@ def home_page(request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Legacy single-page tool — kept as a backup
-# ---------------------------------------------------------------------------
-@router.get("/legacy", response_class=HTMLResponse)
-def legacy_page(request: Request):
-    return templates.TemplateResponse(request, "legacy.html")
-
-
-# ---------------------------------------------------------------------------
 # Phase 1 — Cleanup page (placeholder for now, real page in Stage B7)
 # ---------------------------------------------------------------------------
 @router.get("/cleanup/{file_id}", response_class=HTMLResponse)
