@@ -1,0 +1,211 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Image to Vector - Upload</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 40px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 36px; border-radius: 14px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); }
+        h1 { margin-top: 0; color: #111827; }
+        p { color: #374151; line-height: 1.5; }
+        .step-indicator { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 13px; color: #6b7280; }
+        .step-pill { background: #e5e7eb; color: #374151; padding: 6px 12px; border-radius: 999px; font-weight: bold; }
+        .step-pill.active { background: #2563eb; color: white; }
+        .drop-zone { margin-top: 20px; padding: 60px 30px; border: 2px dashed #9ca3af; border-radius: 12px; background: #f9fafb; text-align: center; cursor: pointer; }
+        .drop-zone:hover { border-color: #2563eb; background: #eff6ff; }
+        .drop-zone.dragging { border-color: #2563eb; background: #dbeafe; }
+        .drop-zone h3 { margin: 0 0 8px 0; color: #111827; }
+        .drop-zone p { margin: 0; color: #6b7280; font-size: 14px; }
+        .drop-zone .icon { font-size: 40px; margin-bottom: 12px; color: #6b7280; }
+        input[type="file"] { display: none; }
+        .preview-card { display: none; margin-top: 20px; padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; }
+        .preview-image-wrap { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; min-height: 380px; display: flex; align-items: center; justify-content: center; }
+        .preview-image-wrap img { max-width: 100%; max-height: 540px; display: block; }
+        .preview-meta { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; color: #1e3a8a; }
+        .preview-meta strong { color: #111827; }
+        .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        button { background: #2563eb; color: white; border: none; padding: 14px 26px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        .secondary { background: #e5e7eb; color: #111827; }
+        .secondary:hover { background: #d1d5db; }
+        .error { margin-top: 18px; padding: 12px; background: #fff0f0; border-left: 4px solid #dc2626; color: #7f1d1d; border-radius: 6px; display: none; }
+        .legacy-link { margin-top: 22px; font-size: 13px; color: #6b7280; text-align: center; }
+        .legacy-link a { color: #2563eb; text-decoration: none; font-weight: bold; }
+        .small { font-size: 13px; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="step-indicator">
+            <span class="step-pill active">1. Upload</span>
+            <span>></span>
+            <span class="step-pill">2. Cleanup</span>
+            <span>></span>
+            <span class="step-pill">3. Vectorize</span>
+        </div>
+        <h1>Upload an Image</h1>
+        <p>Pick a PNG, JPG, JPEG or WEBP image to begin. You will then clean it up and vectorize it step by step.</p>
+
+        <div id="dropZone" class="drop-zone">
+            <div class="icon">^</div>
+            <h3>Drop your image here</h3>
+            <p>or click to choose a file</p>
+        </div>
+
+        <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.webp" />
+
+        <div id="previewCard" class="preview-card">
+            <div class="preview-image-wrap">
+                <img id="previewImg" alt="Preview of selected image" />
+            </div>
+            <div class="preview-meta">
+                <div id="fileMeta"></div>
+                <div class="small">Ready to upload</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="uploadButton" type="button" disabled>Upload and Continue</button>
+            <button id="resetButton" type="button" class="secondary" style="display:none;">Pick a Different File</button>
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <p class="small" style="margin-top:28px;">Maximum file size: 20 MB. Supported formats: PNG, JPG, JPEG, WEBP.</p>
+
+        <div class="legacy-link">
+            Prefer the old single-page tool? <a href="/legacy">Use the legacy editor</a>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const previewCard = document.getElementById("previewCard");
+        const previewImg = document.getElementById("previewImg");
+        const fileMeta = document.getElementById("fileMeta");
+        const uploadButton = document.getElementById("uploadButton");
+        const resetButton = document.getElementById("resetButton");
+        const errorDiv = document.getElementById("error");
+
+        let selectedFile = null;
+        let previewUrl = null;
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+            return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+        }
+
+        function showError(message) {
+            errorDiv.innerText = message;
+            errorDiv.style.display = "block";
+        }
+        function clearError() {
+            errorDiv.innerText = "";
+            errorDiv.style.display = "none";
+        }
+
+        function handleFileSelected(file) {
+            clearError();
+            if (!file) return;
+
+            const allowed = [".png", ".jpg", ".jpeg", ".webp"];
+            const lowerName = file.name.toLowerCase();
+            const hasAllowedExt = allowed.some(function(ext) { return lowerName.endsWith(ext); });
+            if (!hasAllowedExt) {
+                showError("Only PNG, JPG, JPEG and WEBP files are allowed.");
+                resetSelection();
+                return;
+            }
+
+            const maxBytes = 20 * 1024 * 1024;
+            if (file.size > maxBytes) {
+                showError("File too large. Maximum size is 20 MB.");
+                resetSelection();
+                return;
+            }
+
+            selectedFile = file;
+
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            previewUrl = URL.createObjectURL(file);
+            previewImg.src = previewUrl;
+
+            fileMeta.innerHTML = '<strong>' + file.name + '</strong> <span class="small">(' + formatBytes(file.size) + ')</span>';
+
+            previewCard.style.display = "block";
+            uploadButton.disabled = false;
+            resetButton.style.display = "inline-block";
+            dropZone.style.display = "none";
+        }
+
+        function resetSelection() {
+            selectedFile = null;
+            fileInput.value = "";
+            if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+            previewImg.removeAttribute("src");
+            previewCard.style.display = "none";
+            uploadButton.disabled = true;
+            resetButton.style.display = "none";
+            dropZone.style.display = "block";
+        }
+
+        dropZone.addEventListener("click", function() { fileInput.click(); });
+
+        ["dragenter", "dragover"].forEach(function(eventName) {
+            dropZone.addEventListener(eventName, function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                dropZone.classList.add("dragging");
+            });
+        });
+        ["dragleave", "drop"].forEach(function(eventName) {
+            dropZone.addEventListener(eventName, function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                dropZone.classList.remove("dragging");
+            });
+        });
+        dropZone.addEventListener("drop", function(event) {
+            const files = event.dataTransfer.files;
+            if (files && files.length > 0) handleFileSelected(files[0]);
+        });
+
+        fileInput.addEventListener("change", function(event) {
+            const files = event.target.files;
+            if (files && files.length > 0) handleFileSelected(files[0]);
+        });
+
+        resetButton.addEventListener("click", function() {
+            resetSelection();
+            clearError();
+        });
+
+        uploadButton.addEventListener("click", async function() {
+            if (!selectedFile) { showError("Please pick a file first."); return; }
+
+            clearError();
+            uploadButton.disabled = true;
+            resetButton.disabled = true;
+            uploadButton.innerText = "Uploading...";
+
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            try {
+                const response = await fetch("/upload", { method: "POST", body: formData });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Upload failed.");
+                const target = data.cleanup_url || ("/cleanup/" + data.file_id);
+                window.location.href = target;
+            } catch (err) {
+                showError(err.message);
+                uploadButton.disabled = false;
+                resetButton.disabled = false;
+                uploadButton.innerText = "Upload and Continue";
+            }
+        });
+    </script>
+</body>
+</html>

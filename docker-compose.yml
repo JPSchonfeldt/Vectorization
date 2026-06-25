@@ -1,0 +1,10 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: vectorization
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
+    restart: unless-stopped

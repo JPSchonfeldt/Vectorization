@@ -1,0 +1,769 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Image to Vector - Vectorize</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 24px;
+            color: #111827;
+        }
+
+        .top-bar {
+            max-width: 1400px;
+            margin: 0 auto 18px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .step-pill {
+            background: #e5e7eb;
+            color: #374151;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-weight: bold;
+        }
+
+        .step-pill.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .step-pill.done {
+            background: #16a34a;
+            color: white;
+        }
+
+        .top-bar a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .top-bar a:hover {
+            text-decoration: underline;
+        }
+
+        .layout {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 380px;
+            gap: 20px;
+        }
+
+        .preview-area {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .preview-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .toggle-row {
+            display: inline-flex;
+            background: #f3f4f6;
+            border-radius: 999px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            color: #374151;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 999px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .toggle-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .toggle-btn:disabled {
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .preview-image-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            min-height: 560px;
+            padding: 14px;
+        }
+
+        .preview-image-wrap img {
+            max-width: 100%;
+            max-height: 680px;
+            display: block;
+        }
+
+        .placeholder-text {
+            color: #9ca3af;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 24px;
+            align-self: start;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 14px 0;
+            font-size: 18px;
+        }
+
+        .section-title {
+            margin: 16px 0 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .preset-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .preset-button {
+            background: #e5e7eb;
+            color: #111827;
+            padding: 7px 11px;
+            font-size: 13px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .preset-button:hover {
+            background: #d1d5db;
+        }
+
+        .preset-button.primary-preset {
+            background: #7c3aed;
+            color: white;
+        }
+
+        .preset-button.primary-preset:hover {
+            background: #6d28d9;
+        }
+
+        .setting-row {
+            margin-bottom: 10px;
+        }
+
+        .setting-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 13px;
+            color: #111827;
+        }
+
+        .setting-help {
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.35;
+            margin-top: 4px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .button-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        button.action {
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .primary:hover {
+            background: #1d4ed8;
+        }
+
+        .primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .success:hover {
+            background: #15803d;
+        }
+
+        .success:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .ghost {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .ghost:hover {
+            background: #d1d5db;
+        }
+
+        .download-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .download-row select {
+            padding: 11px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            background: white;
+        }
+
+        .download-row button {
+            flex: 1;
+        }
+
+        .error {
+            margin-top: 14px;
+            padding: 10px;
+            background: #fff0f0;
+            border-left: 4px solid #dc2626;
+            color: #7f1d1d;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .summary {
+            margin-top: 14px;
+            padding: 12px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #374151;
+            display: none;
+        }
+
+        .small {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        @media (max-width: 1000px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="step-indicator">
+            <span class="step-pill done">1. Upload</span>
+            <span>&gt;</span>
+            <span class="step-pill done">2. Cleanup</span>
+            <span>&gt;</span>
+            <span class="step-pill active">3. Vectorize</span>
+        </div>
+
+        <div>
+            <a href="/">Start over</a>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="preview-area">
+            <div class="preview-header">
+                <h2>Preview</h2>
+                <div class="toggle-row">
+                    <button id="viewProcessedBtn" type="button" class="toggle-btn active">Processed</button>
+                    <button id="viewSvgBtn" type="button" class="toggle-btn" disabled>SVG</button>
+                </div>
+            </div>
+
+            <div class="preview-image-wrap">
+                <img id="processedImg" alt="Processed image preview" />
+                <img id="svgImg" alt="Vectorized SVG preview" style="display:none;" />
+                <div id="placeholderText" class="placeholder-text" style="display:none;">
+                    Click <strong>Update Preview</strong> to generate the SVG.
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h2>Vectorization Settings</h2>
+
+            <div class="section-title">Presets</div>
+            <div class="preset-row">
+                <button type="button" class="preset-button" onclick="applyPreset('balanced')">Balanced</button>
+                <button type="button" class="preset-button" onclick="applyPreset('simple')">Simple</button>
+                <button type="button" class="preset-button" onclick="applyPreset('detailed')">Detailed</button>
+                <button type="button" class="preset-button" onclick="applyPreset('smooth')">Smooth</button>
+                <button type="button" class="preset-button primary-preset" onclick="applyPreset('vectorizer')">Vectorizer-like</button>
+            </div>
+
+            <div class="section-title">VTracer Sliders</div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Color Precision</span><span id="colorPrecisionValue">6</span></div>
+                <input type="range" id="colorPrecision" min="1" max="8" step="1" value="6">
+                <div class="setting-help">Lower = fewer colour variations. Higher = more colour detail.</div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Speckle Filter</span><span id="filterSpeckleValue">4</span></div>
+                <input type="range" id="filterSpeckle" min="0" max="30" step="1" value="4">
+                <div class="setting-help">Removes tiny patches or noise.</div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Layer Difference</span><span id="layerDifferenceValue">16</span></div>
+                <input type="range" id="layerDifference" min="1" max="64" step="1" value="16">
+                <div class="setting-help">Lower usually keeps more internal colour regions.</div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Corner Threshold</span><span id="cornerThresholdValue">60</span></div>
+                <input type="range" id="cornerThreshold" min="0" max="180" step="1" value="60">
+                <div class="setting-help">Lower = sharper corners. Higher = smoother curves.</div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Length Threshold</span><span id="lengthThresholdValue">4.0</span></div>
+                <input type="range" id="lengthThreshold" min="3.5" max="10" step="0.1" value="4.0">
+                <div class="setting-help">Lower = more detail. Higher = simpler paths.</div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Path Precision</span><span id="pathPrecisionValue">3</span></div>
+                <input type="range" id="pathPrecision" min="1" max="8" step="1" value="3">
+                <div class="setting-help">Lower = smaller SVG. Higher = more accurate paths.</div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Max Iterations</span><span id="maxIterationsValue">20</span></div>
+                <input type="range" id="maxIterations" min="1" max="50" step="1" value="20">
+                <div class="setting-help">More iterations can smooth curves but may be slower.</div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Splice Threshold</span><span id="spliceThresholdValue">45</span></div>
+                <input type="range" id="spliceThreshold" min="0" max="180" step="1" value="45">
+                <div class="setting-help">Lower = smoother outlines, higher = more segments.</div>
+            </div>
+
+<div class="section-title">Curve Smoothing</div>
+
+<div class="checkbox-row" style="font-size:13px;">
+    <input type="checkbox" id="svgSmoothCurves" checked>
+    <label for="svgSmoothCurves">Smooth jagged curves</label>
+</div>
+
+<div class="setting-row">
+    <div class="setting-label">
+        <span>Smoothing Passes</span>
+        <span id="svgSmoothingPassesValue">2</span>
+    </div>
+    <input type="range" id="svgSmoothingPasses" min="0" max="10" step="1" value="2">
+    <div class="setting-help">More passes = smoother but loses sharpness. 2 is usually right.</div>
+</div>
+
+<div class="setting-row">
+    <div class="setting-label">
+        <span>Sample Step</span>
+        <span id="svgCurveSampleStepValue">2.0</span>
+    </div>
+    <input type="range" id="svgCurveSampleStep" min="0.5" max="10" step="0.5" value="2.0">
+    <div class="setting-help">Lower = finer sampling, higher quality, slower.</div>
+</div>
+
+<div class="section-title">SVG Cleanup</div>
+
+<div class="checkbox-row" style="font-size:13px;">
+    <input type="checkbox" id="svgRoundCoordinates" checked>
+    <label for="svgRoundCoordinates">Round path coordinates</label>
+</div>
+
+<div class="setting-row">
+    <div class="setting-label">
+        <span>Coordinate Decimals</span>
+        <span id="svgCoordinateDecimalsValue">2</span>
+    </div>
+    <input type="range" id="svgCoordinateDecimals" min="1" max="5" step="1" value="2">
+    <div class="setting-help">Lower = smaller file, slightly less precise. 2 is usually enough.</div>
+</div>
+
+<div class="checkbox-row" style="font-size:13px;">
+    <input type="checkbox" id="svgRemoveTinyPaths" checked>
+    <label for="svgRemoveTinyPaths">Remove tiny paths</label>
+</div>
+
+<div class="setting-row">
+    <div class="setting-label">
+        <span>Minimum Path Size</span>
+        <span id="svgMinPathSizeValue">4</span>
+    </div>
+    <input type="range" id="svgMinPathSize" min="0" max="50" step="1" value="4">
+    <div class="setting-help">Drops paths smaller than this square area. 0 = keep everything.</div>
+</div>
+
+<div class="checkbox-row" style="font-size:13px;">
+    <input type="checkbox" id="svgMergeSameColorPaths" checked>
+    <label for="svgMergeSameColorPaths">Merge same-colour adjacent paths</label>
+</div>
+
+            <div class="button-row">
+                <button id="updateBtn" type="button" class="action primary">Update Preview</button>
+
+                <div class="download-row">
+                    <select id="formatSelect">
+                        <option value="svg">SVG</option>
+                        <option value="pdf">PDF</option>
+                    </select>
+                    <button id="downloadBtn" type="button" class="action success" disabled>Download</button>
+                </div>
+
+                <button id="backBtn" type="button" class="action ghost">Back to Cleanup</button>
+            </div>
+
+            <div id="error" class="error"></div>
+            <div id="summary" class="summary"></div>
+
+            <p class="small" style="margin-top:14px;">
+                Going back lets you change cleanup settings. The current SVG result will reset.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const FILE_ID = "{{ file_id }}";
+        const PROCESSED_FILENAME = "{{ processed_filename }}";
+
+        const processedImg = document.getElementById("processedImg");
+        const svgImg = document.getElementById("svgImg");
+        const placeholderText = document.getElementById("placeholderText");
+
+        const viewProcessedBtn = document.getElementById("viewProcessedBtn");
+        const viewSvgBtn = document.getElementById("viewSvgBtn");
+
+        const updateBtn = document.getElementById("updateBtn");
+        const downloadBtn = document.getElementById("downloadBtn");
+        const formatSelect = document.getElementById("formatSelect");
+        const backBtn = document.getElementById("backBtn");
+        const errorDiv = document.getElementById("error");
+        const summaryDiv = document.getElementById("summary");
+
+        let hasSvg = false;
+        let lastResult = null;
+
+        processedImg.src = "/download/processed/" + PROCESSED_FILENAME;
+
+const sliderIds = [
+    ["colorPrecision", "colorPrecisionValue"],
+    ["filterSpeckle", "filterSpeckleValue"],
+    ["layerDifference", "layerDifferenceValue"],
+    ["cornerThreshold", "cornerThresholdValue"],
+    ["lengthThreshold", "lengthThresholdValue"],
+    ["pathPrecision", "pathPrecisionValue"],
+    ["maxIterations", "maxIterationsValue"],
+    ["spliceThreshold", "spliceThresholdValue"],
+    ["svgCoordinateDecimals", "svgCoordinateDecimalsValue"],
+    ["svgMinPathSize", "svgMinPathSizeValue"],
+    ["svgSmoothingPasses", "svgSmoothingPassesValue"],
+    ["svgCurveSampleStep", "svgCurveSampleStepValue"]
+];
+
+        sliderIds.forEach(function(pair) {
+            const slider = document.getElementById(pair[0]);
+            const label = document.getElementById(pair[1]);
+            slider.addEventListener("input", function() {
+                label.innerText = slider.value;
+                onSettingsChanged();
+            });
+        });
+
+
+// NEW — listen for changes on the SVG cleanup checkboxes
+["svgRoundCoordinates", "svgRemoveTinyPaths", "svgMergeSameColorPaths", "svgSmoothCurves"].forEach(function(id) {
+    document.getElementById(id).addEventListener("change", onSettingsChanged);
+});
+
+
+        function onSettingsChanged() {
+            downloadBtn.disabled = true;
+            summaryDiv.style.display = "none";
+        }
+
+        function setSlider(id, value) {
+            const slider = document.getElementById(id);
+            const label = document.getElementById(id + "Value");
+            slider.value = value;
+            label.innerText = value;
+        }
+
+        function applyPreset(name) {
+            const presets = {
+                balanced:   [6, 4, 16, 60, 4.0, 3, 20, 45],
+                simple:     [4, 12, 28, 80, 6.0, 2, 20, 45],
+                detailed:   [8, 1, 8, 45, 3.5, 5, 25, 45],
+                smooth:     [6, 8, 20, 120, 7.0, 3, 25, 30],
+                vectorizer: [6, 2, 10, 45, 3.5, 5, 30, 30]
+            };
+
+            const preset = presets[name];
+            if (!preset) return;
+
+            const ids = [
+                "colorPrecision",
+                "filterSpeckle",
+                "layerDifference",
+                "cornerThreshold",
+                "lengthThreshold",
+                "pathPrecision",
+                "maxIterations",
+                "spliceThreshold"
+            ];
+
+            for (let i = 0; i < ids.length; i++) {
+                setSlider(ids[i], preset[i]);
+            }
+
+            onSettingsChanged();
+        }
+
+function readSettings() {
+    const cleanupSettingsRaw = sessionStorage.getItem("cleanupSettings:" + FILE_ID);
+    let cleanupSettings = {};
+
+    if (cleanupSettingsRaw) {
+        try {
+            cleanupSettings = JSON.parse(cleanupSettingsRaw);
+        } catch {
+            cleanupSettings = {};
+        }
+    }
+
+    return {
+        // Cleanup settings (passed through for completeness)
+        limit_colors: cleanupSettings.limit_colors || false,
+        color_reduction_method: cleanupSettings.color_reduction_method || "smart_hue",
+        target_colors: cleanupSettings.target_colors || 16,
+        upscale_factor: cleanupSettings.upscale_factor || 1,
+        smoothing_strength: cleanupSettings.smoothing_strength || 0,
+        sharpen_strength: cleanupSettings.sharpen_strength || 0,
+
+        // VTracer settings
+        color_precision: parseInt(document.getElementById("colorPrecision").value, 10),
+        filter_speckle: parseInt(document.getElementById("filterSpeckle").value, 10),
+        layer_difference: parseInt(document.getElementById("layerDifference").value, 10),
+        corner_threshold: parseInt(document.getElementById("cornerThreshold").value, 10),
+        length_threshold: parseFloat(document.getElementById("lengthThreshold").value),
+        path_precision: parseInt(document.getElementById("pathPrecision").value, 10),
+        max_iterations: parseInt(document.getElementById("maxIterations").value, 10),
+        splice_threshold: parseInt(document.getElementById("spliceThreshold").value, 10),
+
+        // SVG cleanup
+        svg_round_coordinates: document.getElementById("svgRoundCoordinates").checked,
+        svg_coordinate_decimals: parseInt(document.getElementById("svgCoordinateDecimals").value, 10),
+        svg_remove_tiny_paths: document.getElementById("svgRemoveTinyPaths").checked,
+        svg_min_path_size: parseInt(document.getElementById("svgMinPathSize").value, 10),
+        svg_merge_same_color_paths: document.getElementById("svgMergeSameColorPaths").checked,
+
+        svg_smooth_curves: document.getElementById("svgSmoothCurves").checked,
+        svg_smoothing_passes: parseInt(document.getElementById("svgSmoothingPasses").value, 10),
+        svg_curve_sample_step: parseFloat(document.getElementById("svgCurveSampleStep").value)
+    };
+}
+
+        function showError(message) {
+            errorDiv.innerText = message;
+            errorDiv.style.display = "block";
+        }
+
+        function clearError() {
+            errorDiv.innerText = "";
+            errorDiv.style.display = "none";
+        }
+
+        function showProcessedView() {
+            processedImg.style.display = "block";
+            svgImg.style.display = "none";
+            placeholderText.style.display = "none";
+            viewProcessedBtn.classList.add("active");
+            viewSvgBtn.classList.remove("active");
+        }
+
+        function showSvgView() {
+            if (!hasSvg) return;
+            processedImg.style.display = "none";
+            svgImg.style.display = "block";
+            placeholderText.style.display = "none";
+            viewProcessedBtn.classList.remove("active");
+            viewSvgBtn.classList.add("active");
+        }
+
+        viewProcessedBtn.addEventListener("click", showProcessedView);
+        viewSvgBtn.addEventListener("click", showSvgView);
+
+        updateBtn.addEventListener("click", async function() {
+            clearError();
+
+            const settings = readSettings();
+
+            updateBtn.disabled = true;
+            const originalText = updateBtn.innerText;
+            updateBtn.innerText = "Vectorizing...";
+
+            try {
+                const response = await fetch("/api/vectorize/" + FILE_ID, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(settings)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "Vectorize failed.");
+                }
+
+                lastResult = data;
+
+                svgImg.src = data.svg_download_url + "?t=" + Date.now();
+                hasSvg = true;
+                viewSvgBtn.disabled = false;
+                showSvgView();
+
+                downloadBtn.disabled = false;
+
+summaryDiv.innerHTML =
+    "<strong>Result:</strong><br>" +
+    (data.palette_size && data.palette_size > 0
+        ? "Locked palette: " + data.palette_size + " colours from cleanup<br>"
+        : "No locked palette (manual mode)<br>") +
+    "Effective Color Precision: " + data.effective_color_precision +
+    " (slider cap was " + data.settings.color_precision + ")<br>" +
+    "Speckle Filter: " + data.settings.filter_speckle + "<br>" +
+    "Layer Difference: " + data.settings.layer_difference + "<br>" +
+    "Corner Threshold: " + data.settings.corner_threshold + "<br>" +
+    "Length Threshold: " + data.settings.length_threshold + "<br>" +
+    "Path Precision: " + data.settings.path_precision + "<br>" +
+    "Max Iterations: " + data.settings.max_iterations + "<br>" +
+    "Splice Threshold: " + data.settings.splice_threshold;
+
+                summaryDiv.style.display = "block";
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                updateBtn.disabled = false;
+                updateBtn.innerText = originalText;
+            }
+        });
+
+        downloadBtn.addEventListener("click", function() {
+            if (!lastResult) return;
+
+            let downloadUrl = lastResult.svg_download_url;
+            let downloadFilename = lastResult.svg_filename;
+
+            if (formatSelect.value === "pdf") {
+                downloadUrl = lastResult.pdf_download_url;
+                downloadFilename = lastResult.pdf_filename;
+            }
+
+            const link = document.createElement("a");
+            link.href = downloadUrl;
+            link.download = downloadFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        backBtn.addEventListener("click", function() {
+            const confirmed = confirm(
+                "Going back will let you change cleanup settings. " +
+                "The current SVG result will reset. Continue?"
+            );
+
+            if (confirmed) {
+                sessionStorage.removeItem("vectorizeResult:" + FILE_ID);
+                window.location.href = "/cleanup/" + FILE_ID;
+            }
+        });
+    </script>
+</body>
+</html>

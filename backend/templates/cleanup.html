@@ -1,0 +1,259 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Image to Vector - Cleanup</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 24px; color: #111827; }
+        .top-bar { max-width: 1400px; margin: 0 auto 18px auto; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .step-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b7280; }
+        .step-pill { background: #e5e7eb; color: #374151; padding: 6px 12px; border-radius: 999px; font-weight: bold; }
+        .step-pill.active { background: #2563eb; color: white; }
+        .step-pill.done { background: #16a34a; color: white; }
+        .top-bar a { color: #2563eb; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .layout { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; }
+        .preview-area { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
+        .preview-header h2 { margin: 0; font-size: 18px; }
+        .toggle-row { display: inline-flex; background: #f3f4f6; border-radius: 999px; padding: 4px; gap: 4px; }
+        .toggle-btn { background: transparent; color: #374151; border: none; padding: 7px 16px; border-radius: 999px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .toggle-btn.active { background: #2563eb; color: white; }
+        .toggle-btn:disabled { color: #9ca3af; cursor: not-allowed; }
+        .preview-image-wrap { display: flex; align-items: center; justify-content: center; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px; min-height: 560px; padding: 14px; }
+        .preview-image-wrap img { max-width: 100%; max-height: 680px; display: block; }
+        .placeholder-text { color: #9ca3af; font-size: 14px; text-align: center; }
+        .sidebar { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); position: sticky; top: 24px; align-self: start; }
+        .sidebar h2 { margin: 0 0 14px 0; font-size: 18px; }
+        .checkbox-row { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px 0; font-weight: bold; color: #111827; }
+        .checkbox-row input { width: 18px; height: 18px; }
+        .setting-row { margin-bottom: 12px; }
+        .setting-label { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #111827; }
+        .setting-help { font-size: 11px; color: #6b7280; line-height: 1.35; margin-top: 4px; }
+        input[type="range"] { width: 100%; }
+        .button-row { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+        button { border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
+        .primary { background: #2563eb; color: white; }
+        .primary:hover { background: #1d4ed8; }
+        .primary:disabled { background: #9ca3af; cursor: not-allowed; }
+        .success { background: #16a34a; color: white; }
+        .success:hover { background: #15803d; }
+        .success:disabled { background: #9ca3af; cursor: not-allowed; }
+        .ghost { background: #e5e7eb; color: #111827; }
+        .ghost:hover { background: #d1d5db; }
+        .error { margin-top: 14px; padding: 10px; background: #fff0f0; border-left: 4px solid #dc2626; color: #7f1d1d; border-radius: 6px; font-size: 13px; display: none; }
+        .small { font-size: 12px; color: #6b7280; }
+        @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="step-indicator">
+            <span class="step-pill done">1. Upload</span>
+            <span>></span>
+            <span class="step-pill active">2. Cleanup</span>
+            <span>></span>
+            <span class="step-pill">3. Vectorize</span>
+        </div>
+        <div><a href="/">Pick a different image</a></div>
+    </div>
+
+    <div class="layout">
+        <div class="preview-area">
+            <div class="preview-header">
+                <h2>Preview</h2>
+                <div class="toggle-row">
+                    <button id="viewOriginalBtn" type="button" class="toggle-btn active">Original</button>
+                    <button id="viewProcessedBtn" type="button" class="toggle-btn" disabled>Processed</button>
+                </div>
+            </div>
+            <div class="preview-image-wrap">
+                <img id="originalImg" alt="Original image" />
+                <img id="processedImg" alt="Processed image" style="display:none;" />
+                <div id="placeholderText" class="placeholder-text" style="display:none;">
+                    Click <strong>Update Preview</strong> to generate the processed image.
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h2>Image Cleanup Settings</h2>
+            <div class="checkbox-row">
+                <input type="checkbox" id="limitColors">
+                <label for="limitColors">Limit colours</label>
+            </div>
+
+<div class="setting-row">
+    <div class="setting-label">
+        <span>Colour Reduction Method</span>
+    </div>
+    <select id="colorReductionMethod" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; background:white; font-size:13px;">
+        <option value="smart_hue">Smart Hue (original)</option>
+        <option value="lab_kmeans">LAB K-means (new)</option>
+    </select>
+    <div class="setting-help">
+        Smart Hue spreads chosen colours across the hue spectrum. LAB K-means picks perceptually similar colour groups — often cleaner on logos and artwork.
+    </div>
+</div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Target Colours</span><span id="targetColorsValue">16</span></div>
+                <input type="range" id="targetColors" min="2" max="128" step="1" value="16">
+                <div class="setting-help">Visually different colour groups to keep.</div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label"><span>Upscale Before Trace</span><span id="upscaleFactorValue">1</span></div>
+                <input type="range" id="upscaleFactor" min="1" max="4" step="1" value="1">
+                <div class="setting-help">Enlarges the image for smoother curves later. Capped at 4000 px.</div>
+<div class="setting-row">
+    <div class="setting-label">
+        <span>Smoothing Method</span>
+    </div>
+    <select id="smoothingMethod" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; background:white; font-size:13px;">
+        <option value="gaussian">Gaussian (uniform blur)</option>
+        <option value="bilateral">Bilateral (edge-preserving)</option>
+    </select>
+    <div class="setting-help">
+        Gaussian smooths everything. Bilateral smooths within colour regions but keeps edges sharp.
+    </div>
+</div>
+
+<div class="setting-row">
+    <div class="setting-label">
+        <span>Smoothing Strength</span>
+        <span id="smoothingStrengthValue">0</span>
+    </div>
+    <input type="range" id="smoothingStrength" min="0" max="5" step="1" value="0">
+    <div class="setting-help">Higher = more smoothing.</div>
+</div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Sharpen Strength</span><span id="sharpenStrengthValue">0</span></div>
+                <input type="range" id="sharpenStrength" min="0" max="5" step="1" value="0">
+                <div class="setting-help">Restores edge clarity after smoothing.</div>
+            </div>
+            <div class="button-row">
+                <button id="updateBtn" type="button" class="primary">Update Preview</button>
+                <button id="continueBtn" type="button" class="success" disabled>Continue to Vectorize</button>
+                <button id="resetBtn" type="button" class="ghost">Reset to Defaults</button>
+            </div>
+            <div id="error" class="error"></div>
+            <p class="small" style="margin-top:14px;">You must click <strong>Update Preview</strong> at least once before continuing.</p>
+        </div>
+    </div>
+
+    <script>
+        const FILE_ID = "{{ file_id }}";
+
+        const originalImg = document.getElementById("originalImg");
+        const processedImg = document.getElementById("processedImg");
+        const placeholderText = document.getElementById("placeholderText");
+        const viewOriginalBtn = document.getElementById("viewOriginalBtn");
+        const viewProcessedBtn = document.getElementById("viewProcessedBtn");
+        const updateBtn = document.getElementById("updateBtn");
+        const continueBtn = document.getElementById("continueBtn");
+        const resetBtn = document.getElementById("resetBtn");
+        const errorDiv = document.getElementById("error");
+
+        let hasProcessedImage = false;
+        originalImg.src = "/download/upload/" + FILE_ID;
+
+        const DEFAULTS = { limitColors: false, targetColors: 16, upscaleFactor: 1, smoothingStrength: 0, sharpenStrength: 0 };
+
+        const sliderIds = [
+            ["targetColors", "targetColorsValue"],
+            ["upscaleFactor", "upscaleFactorValue"],
+            ["smoothingStrength", "smoothingStrengthValue"],
+            ["sharpenStrength", "sharpenStrengthValue"]
+        ];
+
+        sliderIds.forEach(function(pair) {
+            const slider = document.getElementById(pair[0]);
+            const label = document.getElementById(pair[1]);
+            slider.addEventListener("input", function() { label.innerText = slider.value; onSettingsChanged(); });
+        });
+
+        document.getElementById("limitColors").addEventListener("change", onSettingsChanged);
+        document.getElementById("smoothingMethod").addEventListener("change", onSettingsChanged);
+        document.getElementById("colorReductionMethod").addEventListener("change", onSettingsChanged);
+
+        function onSettingsChanged() { continueBtn.disabled = true; }
+        function setSlider(id, value) { const s = document.getElementById(id); const l = document.getElementById(id + "Value"); s.value = value; l.innerText = value; }
+        function applyDefaults() {
+            document.getElementById("limitColors").checked = DEFAULTS.limitColors;
+            document.getElementById("colorReductionMethod").value = "smart_hue";
+            setSlider("targetColors", DEFAULTS.targetColors);
+            setSlider("upscaleFactor", DEFAULTS.upscaleFactor);
+            setSlider("smoothingStrength", DEFAULTS.smoothingStrength);
+            document.getElementById("smoothingMethod").value = "gaussian";
+            setSlider("sharpenStrength", DEFAULTS.sharpenStrength);
+            continueBtn.disabled = true;
+        }
+        function readSettings() {
+            return {
+                limit_colors: document.getElementById("limitColors").checked,
+                color_reduction_method: document.getElementById("colorReductionMethod").value,
+                target_colors: parseInt(document.getElementById("targetColors").value, 10),
+                upscale_factor: parseInt(document.getElementById("upscaleFactor").value, 10),
+                smoothing_strength: parseInt(document.getElementById("smoothingStrength").value, 10),
+                smoothing_method: document.getElementById("smoothingMethod").value,
+                sharpen_strength: parseInt(document.getElementById("sharpenStrength").value, 10)
+            };
+        }
+        function showError(msg) { errorDiv.innerText = msg; errorDiv.style.display = "block"; }
+        function clearError() { errorDiv.innerText = ""; errorDiv.style.display = "none"; }
+
+        function showOriginalView() {
+            originalImg.style.display = "block";
+            processedImg.style.display = "none";
+            placeholderText.style.display = "none";
+            viewOriginalBtn.classList.add("active");
+            viewProcessedBtn.classList.remove("active");
+        }
+        function showProcessedView() {
+            if (!hasProcessedImage) return;
+            originalImg.style.display = "none";
+            processedImg.style.display = "block";
+            placeholderText.style.display = "none";
+            viewOriginalBtn.classList.remove("active");
+            viewProcessedBtn.classList.add("active");
+        }
+
+        viewOriginalBtn.addEventListener("click", showOriginalView);
+        viewProcessedBtn.addEventListener("click", showProcessedView);
+        resetBtn.addEventListener("click", function() { applyDefaults(); clearError(); });
+
+        updateBtn.addEventListener("click", async function() {
+            clearError();
+            const settings = readSettings();
+            updateBtn.disabled = true;
+            const originalText = updateBtn.innerText;
+            updateBtn.innerText = "Processing...";
+            try {
+                const response = await fetch("/api/preprocess/" + FILE_ID, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(settings)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Preprocess failed.");
+                const bust = "?t=" + Date.now();
+                processedImg.src = data.processed_download_url + bust;
+                hasProcessedImage = true;
+                viewProcessedBtn.disabled = false;
+                showProcessedView();
+                sessionStorage.setItem("cleanupSettings:" + FILE_ID, JSON.stringify(settings));
+                sessionStorage.setItem("cleanupReady:" + FILE_ID, "true");
+                continueBtn.disabled = false;
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                updateBtn.disabled = false;
+                updateBtn.innerText = originalText;
+            }
+        });
+
+        continueBtn.addEventListener("click", function() {
+            window.location.href = "/vectorize/" + FILE_ID;
+        });
+    </script>
+</body>
+</html>
