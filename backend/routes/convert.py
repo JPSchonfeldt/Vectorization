@@ -62,9 +62,12 @@ async def preprocess_existing_image(file_id: str, payload: dict = Body(...)):
         smoothing_strength=int(payload.get("smoothing_strength", 0)),
         smoothing_method=str(payload.get("smoothing_method", "gaussian")),
         sharpen_strength=int(payload.get("sharpen_strength", 0)),
-
-        # The cleanup phase does not really use these, but the same
-        # validation function expects them. We use safe defaults.
+        median_filter_enabled=bool(payload.get("median_filter_enabled", False)),
+        median_filter_strength=int(payload.get("median_filter_strength", 1)),
+        morphological_close_enabled=bool(payload.get("morphological_close_enabled", False)),
+        morphological_close_strength=int(payload.get("morphological_close_strength", 1)),
+        drop_tiny_blobs_enabled=bool(payload.get("drop_tiny_blobs_enabled", False)),
+        drop_tiny_blobs_min_size=int(payload.get("drop_tiny_blobs_min_size", 8)),
         color_precision=int(payload.get("color_precision", 6)),
         filter_speckle=int(payload.get("filter_speckle", 4)),
         layer_difference=int(payload.get("layer_difference", 16)),
@@ -104,8 +107,12 @@ async def vectorize_existing_image(file_id: str, payload: dict = Body(...)):
         smoothing_strength=int(payload.get("smoothing_strength", 0)),
         smoothing_method=str(payload.get("smoothing_method", "gaussian")),
         sharpen_strength=int(payload.get("sharpen_strength", 0)),
-
-        # Vector settings (this is what this phase actually uses)
+        median_filter_enabled=bool(payload.get("median_filter_enabled", False)),
+        median_filter_strength=int(payload.get("median_filter_strength", 1)),
+        morphological_close_enabled=bool(payload.get("morphological_close_enabled", False)),
+        morphological_close_strength=int(payload.get("morphological_close_strength", 1)),
+        drop_tiny_blobs_enabled=bool(payload.get("drop_tiny_blobs_enabled", False)),
+        drop_tiny_blobs_min_size=int(payload.get("drop_tiny_blobs_min_size", 8)),
         color_precision=int(payload.get("color_precision", 6)),
         filter_speckle=int(payload.get("filter_speckle", 4)),
         layer_difference=int(payload.get("layer_difference", 16)),

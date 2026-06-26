@@ -130,6 +130,50 @@
                 <input type="range" id="sharpenStrength" min="0" max="5" step="1" value="0">
                 <div class="setting-help">Restores edge clarity after smoothing.</div>
             </div>
+<div style="margin-top:18px; padding-top:14px; border-top:1px solid #e5e7eb;">
+    <div style="font-size:14px; font-weight:bold; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+        Classical Cleanup
+    </div>
+
+    <div class="checkbox-row" style="font-size:13px;">
+        <input type="checkbox" id="medianFilterEnabled">
+        <label for="medianFilterEnabled">Median filter (remove noise)</label>
+    </div>
+    <div class="setting-row">
+        <div class="setting-label">
+            <span>Median Filter Strength</span>
+            <span id="medianFilterStrengthValue">1</span>
+        </div>
+        <input type="range" id="medianFilterStrength" min="0" max="5" step="1" value="1">
+        <div class="setting-help">Removes JPEG noise and tiny pixel artifacts.</div>
+    </div>
+
+    <div class="checkbox-row" style="font-size:13px;">
+        <input type="checkbox" id="morphologicalCloseEnabled">
+        <label for="morphologicalCloseEnabled">Close small gaps in shapes</label>
+    </div>
+    <div class="setting-row">
+        <div class="setting-label">
+            <span>Closing Strength</span>
+            <span id="morphologicalCloseStrengthValue">1</span>
+        </div>
+        <input type="range" id="morphologicalCloseStrength" min="0" max="3" step="1" value="1">
+        <div class="setting-help">Repairs thin breaks in outlines and text.</div>
+    </div>
+
+    <div class="checkbox-row" style="font-size:13px;">
+        <input type="checkbox" id="dropTinyBlobsEnabled">
+        <label for="dropTinyBlobsEnabled">Drop tiny pixel blobs</label>
+    </div>
+    <div class="setting-row">
+        <div class="setting-label">
+            <span>Minimum Blob Size</span>
+            <span id="dropTinyBlobsMinSizeValue">8</span>
+        </div>
+        <input type="range" id="dropTinyBlobsMinSize" min="0" max="50" step="1" value="8">
+        <div class="setting-help">Removes isolated pixel specks. Higher = more aggressive.</div>
+    </div>
+</div>
             <div class="button-row">
                 <button id="updateBtn" type="button" class="primary">Update Preview</button>
                 <button id="continueBtn" type="button" class="success" disabled>Continue to Vectorize</button>
@@ -162,7 +206,10 @@
             ["targetColors", "targetColorsValue"],
             ["upscaleFactor", "upscaleFactorValue"],
             ["smoothingStrength", "smoothingStrengthValue"],
-            ["sharpenStrength", "sharpenStrengthValue"]
+            ["sharpenStrength", "sharpenStrengthValue"],
+            ["medianFilterStrength", "medianFilterStrengthValue"],
+            ["morphologicalCloseStrength", "morphologicalCloseStrengthValue"],
+            ["dropTinyBlobsMinSize", "dropTinyBlobsMinSizeValue"]
         ];
 
         sliderIds.forEach(function(pair) {
@@ -172,32 +219,51 @@
         });
 
         document.getElementById("limitColors").addEventListener("change", onSettingsChanged);
+
+["medianFilterEnabled", "morphologicalCloseEnabled", "dropTinyBlobsEnabled"].forEach(function(id) {
+    document.getElementById(id).addEventListener("change", onSettingsChanged);
+});
+
         document.getElementById("smoothingMethod").addEventListener("change", onSettingsChanged);
         document.getElementById("colorReductionMethod").addEventListener("change", onSettingsChanged);
 
         function onSettingsChanged() { continueBtn.disabled = true; }
         function setSlider(id, value) { const s = document.getElementById(id); const l = document.getElementById(id + "Value"); s.value = value; l.innerText = value; }
         function applyDefaults() {
-            document.getElementById("limitColors").checked = DEFAULTS.limitColors;
-            document.getElementById("colorReductionMethod").value = "smart_hue";
-            setSlider("targetColors", DEFAULTS.targetColors);
-            setSlider("upscaleFactor", DEFAULTS.upscaleFactor);
-            setSlider("smoothingStrength", DEFAULTS.smoothingStrength);
-            document.getElementById("smoothingMethod").value = "gaussian";
-            setSlider("sharpenStrength", DEFAULTS.sharpenStrength);
-            continueBtn.disabled = true;
-        }
+    document.getElementById("limitColors").checked = DEFAULTS.limitColors;
+    document.getElementById("colorReductionMethod").value = "smart_hue";
+    document.getElementById("smoothingMethod").value = "gaussian";
+    setSlider("targetColors", DEFAULTS.targetColors);
+    setSlider("upscaleFactor", DEFAULTS.upscaleFactor);
+    setSlider("smoothingStrength", DEFAULTS.smoothingStrength);
+    setSlider("sharpenStrength", DEFAULTS.sharpenStrength);
+
+    document.getElementById("medianFilterEnabled").checked = false;
+    document.getElementById("morphologicalCloseEnabled").checked = false;
+    document.getElementById("dropTinyBlobsEnabled").checked = false;
+    setSlider("medianFilterStrength", 1);
+    setSlider("morphologicalCloseStrength", 1);
+    setSlider("dropTinyBlobsMinSize", 8);
+
+    continueBtn.disabled = true;
+}
         function readSettings() {
-            return {
-                limit_colors: document.getElementById("limitColors").checked,
-                color_reduction_method: document.getElementById("colorReductionMethod").value,
-                target_colors: parseInt(document.getElementById("targetColors").value, 10),
-                upscale_factor: parseInt(document.getElementById("upscaleFactor").value, 10),
-                smoothing_strength: parseInt(document.getElementById("smoothingStrength").value, 10),
-                smoothing_method: document.getElementById("smoothingMethod").value,
-                sharpen_strength: parseInt(document.getElementById("sharpenStrength").value, 10)
-            };
-        }
+    return {
+        limit_colors: document.getElementById("limitColors").checked,
+        color_reduction_method: document.getElementById("colorReductionMethod").value,
+        target_colors: parseInt(document.getElementById("targetColors").value, 10),
+        upscale_factor: parseInt(document.getElementById("upscaleFactor").value, 10),
+        smoothing_strength: parseInt(document.getElementById("smoothingStrength").value, 10),
+        smoothing_method: document.getElementById("smoothingMethod").value,
+        sharpen_strength: parseInt(document.getElementById("sharpenStrength").value, 10),
+        median_filter_enabled: document.getElementById("medianFilterEnabled").checked,
+        median_filter_strength: parseInt(document.getElementById("medianFilterStrength").value, 10),
+        morphological_close_enabled: document.getElementById("morphologicalCloseEnabled").checked,
+        morphological_close_strength: parseInt(document.getElementById("morphologicalCloseStrength").value, 10),
+        drop_tiny_blobs_enabled: document.getElementById("dropTinyBlobsEnabled").checked,
+        drop_tiny_blobs_min_size: parseInt(document.getElementById("dropTinyBlobsMinSize").value, 10)
+    };
+}
         function showError(msg) { errorDiv.innerText = msg; errorDiv.style.display = "block"; }
         function clearError() { errorDiv.innerText = ""; errorDiv.style.display = "none"; }
 

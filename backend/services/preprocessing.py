@@ -5,6 +5,13 @@ from fastapi import HTTPException
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
 from skimage.restoration import denoise_bilateral
+from skimage.filters import median
+from skimage.morphology import (
+    disk,
+    binary_closing,
+    label,
+    remove_small_objects,
+)
 
 from config import (
     ALLOWED_EXTENSIONS,
@@ -21,25 +28,7 @@ from services.color_reduction import (
 # ---------------------------------------------------------------------------
 # Public preprocessing entry point
 # ---------------------------------------------------------------------------
-def preprocess_image_for_tracing(
-    input_path: Path,
-    output_path: Path,
-    settings: VectorSettings,
-) -> None:
-    """
-    Preprocessing pipeline before VTracer.
-
-    Order matters for quality:
-
-        1. Load and flatten alpha
-        2. Upscale (LANCZOS) so traced curves have more pixels to work with
-        3. Mild contrast boost so colour boundaries are crisper
-        4. Optional colour reduction (after upscale, so palette mapping
-           happens at full resolution)
-        5. Optional Gaussian blur to smooth jagged pixel edges
-        6. Optional sharpen to restore edge clarity after blur
-    """
-
+def preprocess_image_for_tracing(input_path: Path, output_path: Path, settings: VectorSettings) -> None:
     image = load_image_as_rgb(input_path)
 
     image = apply_upscale(image, settings.upscale_factor)
@@ -59,18 +48,27 @@ def preprocess_image_for_tracing(
                 target_colors=settings.target_colors,
             )
 
-    # Save the palette so the vectorize phase can lock to it
+    # Save palette so the vectorize phase can lock to it
     palette_path = output_path.with_name(output_path.stem + "_palette.json")
 
     if palette_used is not None:
         save_palette(palette_path, palette_used)
     else:
-        # No palette = explicitly remove any stale one from previous run
         if palette_path.exists():
             try:
                 palette_path.unlink()
             except OSError:
                 pass
+
+    # --- Phase 1F: Classical artifact cleanup ---
+    if settings.median_filter_enabled:
+        image = apply_median_filter(image, strength=settings.median_filter_strength)
+
+    if settings.morphological_close_enabled:
+        image = apply_morphological_close(image, strength=settings.morphological_close_strength)
+
+    if settings.drop_tiny_blobs_enabled:
+        image = apply_drop_tiny_blobs(image, min_size=settings.drop_tiny_blobs_min_size)
 
     image = apply_smoothing(
         image,
@@ -353,3 +351,114 @@ def compute_auto_color_precision(palette: list, max_precision: int) -> int:
             return precision
 
     return capped_max
+
+# ---------------------------------------------------------------------------
+# Phase 1F — Classical artifact cleanup
+# ---------------------------------------------------------------------------
+def apply_median_filter(image: Image.Image, strength: int) -> Image.Image:
+    """
+    Reduce JPEG/compression noise and salt & pepper artifacts.
+
+    Strength 0 = off. Higher = larger neighbourhood = more aggressive
+    noise removal. Too high can blur fine details.
+
+    Runs per channel because scikit-image median expects 2D arrays.
+    """
+
+    if strength <= 0:
+        return image
+
+    radius = strength  # disk radius in pixels (1..5)
+    structuring_element = disk(radius)
+
+    rgb_array = np.array(image.convert("RGB"))
+
+    cleaned_channels = []
+    for channel_index in range(3):
+        channel = rgb_array[:, :, channel_index]
+        cleaned = median(channel, footprint=structuring_element)
+        cleaned_channels.append(cleaned)
+
+    cleaned_array = np.stack(cleaned_channels, axis=2).astype(np.uint8)
+
+    return Image.fromarray(cleaned_array, mode="RGB")
+
+
+def apply_morphological_close(image: Image.Image, strength: int) -> Image.Image:
+    """
+    Close tiny gaps in shape outlines.
+
+    Useful when a logo or text shape has thin breaks caused by JPEG
+    compression or quantization. The closing operation grows shapes
+    by N pixels, then shrinks them back by N pixels — gaps disappear
+    but shapes keep their original size.
+
+    Strength 0 = off. 1 = 1px radius. 2 = 3px radius. 3 = 5px radius.
+    """
+
+    if strength <= 0:
+        return image
+
+    radius = (strength * 2) - 1  # 1, 3, 5
+    structuring_element = disk(radius)
+
+    rgb_array = np.array(image.convert("RGB"))
+
+    # Build a binary mask of non-near-white pixels (everything that is "ink")
+    # so we close ink-side gaps without disturbing the background.
+    luminance = (
+        0.299 * rgb_array[:, :, 0]
+        + 0.587 * rgb_array[:, :, 1]
+        + 0.114 * rgb_array[:, :, 2]
+    )
+    ink_mask = luminance < 230  # tune-able threshold
+
+    closed_mask = binary_closing(ink_mask, footprint=structuring_element)
+
+    # Pixels that became ink after closing inherit the nearest existing
+    # ink colour by simply darkening the original by a small bias. This
+    # keeps the closing visible without inventing a colour from nothing.
+    output = rgb_array.copy()
+    grew_mask = closed_mask & (~ink_mask)
+    if np.any(grew_mask):
+        # Use a black "shape extension" so the closure is meaningful
+        # for the tracer.
+        output[grew_mask] = [0, 0, 0]
+
+    return Image.fromarray(output, mode="RGB")
+
+
+def apply_drop_tiny_blobs(image: Image.Image, min_size: int) -> Image.Image:
+    """
+    Remove tiny disconnected dark pixel blobs.
+
+    These are usually JPEG specks or noise that VTracer would otherwise
+    turn into nuisance SVG paths.
+
+    min_size = minimum connected pixel count to keep.
+    """
+
+    if min_size <= 0:
+        return image
+
+    rgb_array = np.array(image.convert("RGB"))
+
+    luminance = (
+        0.299 * rgb_array[:, :, 0]
+        + 0.587 * rgb_array[:, :, 1]
+        + 0.114 * rgb_array[:, :, 2]
+    )
+    ink_mask = luminance < 230
+
+    labelled_mask, _ = label(ink_mask, connectivity=2, return_num=True)
+    kept_mask = remove_small_objects(labelled_mask, min_size=min_size, connectivity=2) > 0
+
+    removed_mask = ink_mask & (~kept_mask)
+    if not np.any(removed_mask):
+        return image
+
+    # Replace removed pixels with white background
+    output = rgb_array.copy()
+    output[removed_mask] = [255, 255, 255]
+
+    return Image.fromarray(output, mode="RGB")

@@ -17,6 +17,14 @@ class VectorSettings:
     color_reduction_method: str = "smart_hue"
     target_colors: int = 16
     upscale_factor: int = 1
+
+    median_filter_enabled: bool = False
+    median_filter_strength: int = 1
+    morphological_close_enabled: bool = False
+    morphological_close_strength: int = 1
+    drop_tiny_blobs_enabled: bool = False
+    drop_tiny_blobs_min_size: int = 8
+
     smoothing_strength: int = 0
     smoothing_method: str = "gaussian"
     sharpen_strength: int = 0
@@ -62,6 +70,12 @@ def validate_vector_settings(
     smoothing_strength: int,
     smoothing_method: str,
     sharpen_strength: int,
+    median_filter_enabled: bool,
+    median_filter_strength: int,
+    morphological_close_enabled: bool,
+    morphological_close_strength: int,
+    drop_tiny_blobs_enabled: bool,
+    drop_tiny_blobs_min_size: int,
     color_precision: int,
     filter_speckle: int,
     layer_difference: int,
@@ -189,6 +203,24 @@ def validate_vector_settings(
             detail="SVG curve sample step must be between 0 and 20.",
         )
 
+    if median_filter_strength < 0 or median_filter_strength > 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Median filter strength must be between 0 and 5.",
+        )
+
+    if morphological_close_strength < 0 or morphological_close_strength > 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Morphological closing strength must be between 0 and 3.",
+        )
+
+    if drop_tiny_blobs_min_size < 0 or drop_tiny_blobs_min_size > 50:
+        raise HTTPException(
+            status_code=400,
+            detail="Drop tiny blobs min size must be between 0 and 50.",
+        )
+
     return VectorSettings(
         limit_colors=limit_colors,
         color_reduction_method=color_reduction_method,
@@ -197,6 +229,12 @@ def validate_vector_settings(
         smoothing_strength=smoothing_strength,
         smoothing_method=smoothing_method,
         sharpen_strength=sharpen_strength,
+        median_filter_enabled=median_filter_enabled,
+        median_filter_strength=median_filter_strength,
+        morphological_close_enabled=morphological_close_enabled,
+        morphological_close_strength=morphological_close_strength,
+        drop_tiny_blobs_enabled=drop_tiny_blobs_enabled,
+        drop_tiny_blobs_min_size=drop_tiny_blobs_min_size,
         color_precision=color_precision,
         filter_speckle=filter_speckle,
         layer_difference=layer_difference,
