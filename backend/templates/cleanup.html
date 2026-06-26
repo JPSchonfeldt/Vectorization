@@ -18,19 +18,33 @@
         .toggle-btn { background: transparent; color: #374151; border: none; padding: 7px 16px; border-radius: 999px; font-weight: bold; font-size: 13px; cursor: pointer; }
         .toggle-btn.active { background: #2563eb; color: white; }
         .toggle-btn:disabled { color: #9ca3af; cursor: not-allowed; }
-        .preview-image-wrap { display: flex; align-items: center; justify-content: center; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px; min-height: 560px; padding: 14px; }
+        .preview-image-wrap {
+            display: flex; align-items: center; justify-content: center;
+            background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px;
+            min-height: 560px; padding: 14px;
+            background-image:
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
         .preview-image-wrap img { max-width: 100%; max-height: 680px; display: block; }
-        .placeholder-text { color: #9ca3af; font-size: 14px; text-align: center; }
-        .sidebar { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); position: sticky; top: 24px; align-self: start; }
+        .placeholder-text { color: #9ca3af; font-size: 14px; text-align: center; background: white; padding: 16px; border-radius: 8px; }
+        .sidebar { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
         .sidebar h2 { margin: 0 0 14px 0; font-size: 18px; }
+        .section-divider { margin-top: 18px; padding-top: 14px; border-top: 1px solid #e5e7eb; }
+        .section-title { font-size: 14px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
         .checkbox-row { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px 0; font-weight: bold; color: #111827; }
         .checkbox-row input { width: 18px; height: 18px; }
         .setting-row { margin-bottom: 12px; }
         .setting-label { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #111827; }
         .setting-help { font-size: 11px; color: #6b7280; line-height: 1.35; margin-top: 4px; }
         input[type="range"] { width: 100%; }
+        select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; background: white; font-size: 13px; }
         .button-row { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-        button { border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
+        button.action { border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
         .primary { background: #2563eb; color: white; }
         .primary:hover { background: #1d4ed8; }
         .primary:disabled { background: #9ca3af; cursor: not-allowed; }
@@ -41,16 +55,16 @@
         .ghost:hover { background: #d1d5db; }
         .error { margin-top: 14px; padding: 10px; background: #fff0f0; border-left: 4px solid #dc2626; color: #7f1d1d; border-radius: 6px; font-size: 13px; display: none; }
         .small { font-size: 12px; color: #6b7280; }
-        @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; } }
+        @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; max-height: none; } }
     </style>
 </head>
 <body>
     <div class="top-bar">
         <div class="step-indicator">
             <span class="step-pill done">1. Upload</span>
-            <span>></span>
+            <span>&gt;</span>
             <span class="step-pill active">2. Cleanup</span>
-            <span>></span>
+            <span>&gt;</span>
             <span class="step-pill">3. Vectorize</span>
         </div>
         <div><a href="/">Pick a different image</a></div>
@@ -76,110 +90,129 @@
 
         <div class="sidebar">
             <h2>Image Cleanup Settings</h2>
+
             <div class="checkbox-row">
                 <input type="checkbox" id="limitColors">
                 <label for="limitColors">Limit colours</label>
             </div>
 
-<div class="setting-row">
-    <div class="setting-label">
-        <span>Colour Reduction Method</span>
-    </div>
-    <select id="colorReductionMethod" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; background:white; font-size:13px;">
-        <option value="smart_hue">Smart Hue (original)</option>
-        <option value="lab_kmeans">LAB K-means (new)</option>
-    </select>
-    <div class="setting-help">
-        Smart Hue spreads chosen colours across the hue spectrum. LAB K-means picks perceptually similar colour groups — often cleaner on logos and artwork.
-    </div>
-</div>
+            <div class="setting-row">
+                <div class="setting-label"><span>Colour Reduction Method</span></div>
+                <select id="colorReductionMethod">
+                    <option value="smart_hue">Smart Hue (original)</option>
+                    <option value="lab_kmeans">LAB K-means (new)</option>
+                </select>
+                <div class="setting-help">Smart Hue spreads colours across the hue spectrum. LAB K-means picks perceptually similar groups.</div>
+            </div>
 
             <div class="setting-row">
                 <div class="setting-label"><span>Target Colours</span><span id="targetColorsValue">16</span></div>
                 <input type="range" id="targetColors" min="2" max="128" step="1" value="16">
                 <div class="setting-help">Visually different colour groups to keep.</div>
             </div>
-            <div class="setting-row">
-                <div class="setting-label"><span>Upscale Before Trace</span><span id="upscaleFactorValue">1</span></div>
-                <input type="range" id="upscaleFactor" min="1" max="4" step="1" value="1">
-                <div class="setting-help">Enlarges the image for smoother curves later. Capped at 4000 px.</div>
-<div class="setting-row">
-    <div class="setting-label">
-        <span>Smoothing Method</span>
-    </div>
-    <select id="smoothingMethod" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; background:white; font-size:13px;">
-        <option value="gaussian">Gaussian (uniform blur)</option>
-        <option value="bilateral">Bilateral (edge-preserving)</option>
-    </select>
-    <div class="setting-help">
-        Gaussian smooths everything. Bilateral smooths within colour regions but keeps edges sharp.
-    </div>
-</div>
 
-<div class="setting-row">
-    <div class="setting-label">
-        <span>Smoothing Strength</span>
-        <span id="smoothingStrengthValue">0</span>
-    </div>
-    <input type="range" id="smoothingStrength" min="0" max="5" step="1" value="0">
-    <div class="setting-help">Higher = more smoothing.</div>
-</div>
+            <div class="section-divider">
+                <div class="section-title">Background Removal</div>
 
-            <div class="setting-row">
-                <div class="setting-label"><span>Sharpen Strength</span><span id="sharpenStrengthValue">0</span></div>
-                <input type="range" id="sharpenStrength" min="0" max="5" step="1" value="0">
-                <div class="setting-help">Restores edge clarity after smoothing.</div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="removeBackground">
+                    <label for="removeBackground">Remove background with AI</label>
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-label"><span>Background Mode</span></div>
+                    <select id="backgroundMode">
+                        <option value="transparent" selected>Transparent</option>
+                        <option value="white">White</option>
+                    </select>
+                    <div class="setting-help">Transparent keeps the cutout edges crisp. White flattens onto a white background.</div>
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-label"><span>AI Model</span></div>
+                    <select id="rembgModel">
+                        <option value="u2netp" selected>u2netp (5 MB, fast)</option>
+                        <option value="u2net">u2net (170 MB, balanced)</option>
+                        <option value="isnet-general-use">isnet-general-use (180 MB, newer)</option>
+                        <option value="silueta">silueta (44 MB, portraits)</option>
+                    </select>
+                    <div class="setting-help">First removal can take 10 to 30 seconds while the model downloads. Subsequent removals are much faster.</div>
+                </div>
             </div>
-<div style="margin-top:18px; padding-top:14px; border-top:1px solid #e5e7eb;">
-    <div style="font-size:14px; font-weight:bold; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
-        Classical Cleanup
-    </div>
 
-    <div class="checkbox-row" style="font-size:13px;">
-        <input type="checkbox" id="medianFilterEnabled">
-        <label for="medianFilterEnabled">Median filter (remove noise)</label>
-    </div>
-    <div class="setting-row">
-        <div class="setting-label">
-            <span>Median Filter Strength</span>
-            <span id="medianFilterStrengthValue">1</span>
-        </div>
-        <input type="range" id="medianFilterStrength" min="0" max="5" step="1" value="1">
-        <div class="setting-help">Removes JPEG noise and tiny pixel artifacts.</div>
-    </div>
+            <div class="section-divider">
+                <div class="section-title">Resolution and Smoothing</div>
 
-    <div class="checkbox-row" style="font-size:13px;">
-        <input type="checkbox" id="morphologicalCloseEnabled">
-        <label for="morphologicalCloseEnabled">Close small gaps in shapes</label>
-    </div>
-    <div class="setting-row">
-        <div class="setting-label">
-            <span>Closing Strength</span>
-            <span id="morphologicalCloseStrengthValue">1</span>
-        </div>
-        <input type="range" id="morphologicalCloseStrength" min="0" max="3" step="1" value="1">
-        <div class="setting-help">Repairs thin breaks in outlines and text.</div>
-    </div>
+                <div class="setting-row">
+                    <div class="setting-label"><span>Upscale Before Trace</span><span id="upscaleFactorValue">1</span></div>
+                    <input type="range" id="upscaleFactor" min="1" max="4" step="1" value="1">
+                    <div class="setting-help">Enlarges the image for smoother curves later. Capped at 4000 px.</div>
+                </div>
 
-    <div class="checkbox-row" style="font-size:13px;">
-        <input type="checkbox" id="dropTinyBlobsEnabled">
-        <label for="dropTinyBlobsEnabled">Drop tiny pixel blobs</label>
-    </div>
-    <div class="setting-row">
-        <div class="setting-label">
-            <span>Minimum Blob Size</span>
-            <span id="dropTinyBlobsMinSizeValue">8</span>
-        </div>
-        <input type="range" id="dropTinyBlobsMinSize" min="0" max="50" step="1" value="8">
-        <div class="setting-help">Removes isolated pixel specks. Higher = more aggressive.</div>
-    </div>
-</div>
+                <div class="setting-row">
+                    <div class="setting-label"><span>Smoothing Method</span></div>
+                    <select id="smoothingMethod">
+                        <option value="gaussian">Gaussian (uniform blur)</option>
+                        <option value="bilateral">Bilateral (edge-preserving)</option>
+                    </select>
+                    <div class="setting-help">Bilateral smooths within colour regions but keeps edges sharp.</div>
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-label"><span>Smoothing Strength</span><span id="smoothingStrengthValue">0</span></div>
+                    <input type="range" id="smoothingStrength" min="0" max="5" step="1" value="0">
+                    <div class="setting-help">Higher = more smoothing.</div>
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-label"><span>Sharpen Strength</span><span id="sharpenStrengthValue">0</span></div>
+                    <input type="range" id="sharpenStrength" min="0" max="5" step="1" value="0">
+                    <div class="setting-help">Restores edge clarity after smoothing.</div>
+                </div>
+            </div>
+
+            <div class="section-divider">
+                <div class="section-title">Classical Cleanup</div>
+
+                <div class="checkbox-row" style="font-size:13px;">
+                    <input type="checkbox" id="medianFilterEnabled">
+                    <label for="medianFilterEnabled">Median filter (remove noise)</label>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label"><span>Median Filter Strength</span><span id="medianFilterStrengthValue">1</span></div>
+                    <input type="range" id="medianFilterStrength" min="0" max="5" step="1" value="1">
+                    <div class="setting-help">Removes JPEG noise and tiny pixel artifacts.</div>
+                </div>
+
+                <div class="checkbox-row" style="font-size:13px;">
+                    <input type="checkbox" id="morphologicalCloseEnabled">
+                    <label for="morphologicalCloseEnabled">Close small gaps in shapes</label>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label"><span>Closing Strength</span><span id="morphologicalCloseStrengthValue">1</span></div>
+                    <input type="range" id="morphologicalCloseStrength" min="0" max="3" step="1" value="1">
+                    <div class="setting-help">Repairs thin breaks in outlines and text.</div>
+                </div>
+
+                <div class="checkbox-row" style="font-size:13px;">
+                    <input type="checkbox" id="dropTinyBlobsEnabled">
+                    <label for="dropTinyBlobsEnabled">Drop tiny pixel blobs</label>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label"><span>Minimum Blob Size</span><span id="dropTinyBlobsMinSizeValue">8</span></div>
+                    <input type="range" id="dropTinyBlobsMinSize" min="0" max="50" step="1" value="8">
+                    <div class="setting-help">Removes isolated pixel specks. Higher = more aggressive.</div>
+                </div>
+            </div>
+
             <div class="button-row">
-                <button id="updateBtn" type="button" class="primary">Update Preview</button>
-                <button id="continueBtn" type="button" class="success" disabled>Continue to Vectorize</button>
-                <button id="resetBtn" type="button" class="ghost">Reset to Defaults</button>
+                <button id="updateBtn" type="button" class="action primary">Update Preview</button>
+                <button id="continueBtn" type="button" class="action success" disabled>Continue to Vectorize</button>
+                <button id="resetBtn" type="button" class="action ghost">Reset to Defaults</button>
             </div>
+
             <div id="error" class="error"></div>
+
             <p class="small" style="margin-top:14px;">You must click <strong>Update Preview</strong> at least once before continuing.</p>
         </div>
     </div>
@@ -198,9 +231,8 @@
         const errorDiv = document.getElementById("error");
 
         let hasProcessedImage = false;
-        originalImg.src = "/download/upload/" + FILE_ID;
 
-        const DEFAULTS = { limitColors: false, targetColors: 16, upscaleFactor: 1, smoothingStrength: 0, sharpenStrength: 0 };
+        originalImg.src = "/download/upload/" + FILE_ID;
 
         const sliderIds = [
             ["targetColors", "targetColorsValue"],
@@ -215,55 +247,75 @@
         sliderIds.forEach(function(pair) {
             const slider = document.getElementById(pair[0]);
             const label = document.getElementById(pair[1]);
-            slider.addEventListener("input", function() { label.innerText = slider.value; onSettingsChanged(); });
+            slider.addEventListener("input", function() {
+                label.innerText = slider.value;
+                onSettingsChanged();
+            });
         });
 
-        document.getElementById("limitColors").addEventListener("change", onSettingsChanged);
+        ["limitColors", "colorReductionMethod", "smoothingMethod",
+         "removeBackground", "backgroundMode", "rembgModel",
+         "medianFilterEnabled", "morphologicalCloseEnabled", "dropTinyBlobsEnabled"]
+            .forEach(function(id) {
+                document.getElementById(id).addEventListener("change", onSettingsChanged);
+            });
 
-["medianFilterEnabled", "morphologicalCloseEnabled", "dropTinyBlobsEnabled"].forEach(function(id) {
-    document.getElementById(id).addEventListener("change", onSettingsChanged);
-});
+        function onSettingsChanged() {
+            continueBtn.disabled = true;
+        }
 
-        document.getElementById("smoothingMethod").addEventListener("change", onSettingsChanged);
-        document.getElementById("colorReductionMethod").addEventListener("change", onSettingsChanged);
+        function setSlider(id, value) {
+            const slider = document.getElementById(id);
+            const label = document.getElementById(id + "Value");
+            slider.value = value;
+            label.innerText = value;
+        }
 
-        function onSettingsChanged() { continueBtn.disabled = true; }
-        function setSlider(id, value) { const s = document.getElementById(id); const l = document.getElementById(id + "Value"); s.value = value; l.innerText = value; }
         function applyDefaults() {
-    document.getElementById("limitColors").checked = DEFAULTS.limitColors;
-    document.getElementById("colorReductionMethod").value = "smart_hue";
-    document.getElementById("smoothingMethod").value = "gaussian";
-    setSlider("targetColors", DEFAULTS.targetColors);
-    setSlider("upscaleFactor", DEFAULTS.upscaleFactor);
-    setSlider("smoothingStrength", DEFAULTS.smoothingStrength);
-    setSlider("sharpenStrength", DEFAULTS.sharpenStrength);
+            document.getElementById("limitColors").checked = false;
+            document.getElementById("colorReductionMethod").value = "smart_hue";
+            document.getElementById("smoothingMethod").value = "gaussian";
 
-    document.getElementById("medianFilterEnabled").checked = false;
-    document.getElementById("morphologicalCloseEnabled").checked = false;
-    document.getElementById("dropTinyBlobsEnabled").checked = false;
-    setSlider("medianFilterStrength", 1);
-    setSlider("morphologicalCloseStrength", 1);
-    setSlider("dropTinyBlobsMinSize", 8);
+            document.getElementById("removeBackground").checked = false;
+            document.getElementById("backgroundMode").value = "transparent";
+            document.getElementById("rembgModel").value = "u2netp";
 
-    continueBtn.disabled = true;
-}
+            setSlider("targetColors", 16);
+            setSlider("upscaleFactor", 1);
+            setSlider("smoothingStrength", 0);
+            setSlider("sharpenStrength", 0);
+
+            document.getElementById("medianFilterEnabled").checked = false;
+            document.getElementById("morphologicalCloseEnabled").checked = false;
+            document.getElementById("dropTinyBlobsEnabled").checked = false;
+            setSlider("medianFilterStrength", 1);
+            setSlider("morphologicalCloseStrength", 1);
+            setSlider("dropTinyBlobsMinSize", 8);
+
+            continueBtn.disabled = true;
+        }
+
         function readSettings() {
-    return {
-        limit_colors: document.getElementById("limitColors").checked,
-        color_reduction_method: document.getElementById("colorReductionMethod").value,
-        target_colors: parseInt(document.getElementById("targetColors").value, 10),
-        upscale_factor: parseInt(document.getElementById("upscaleFactor").value, 10),
-        smoothing_strength: parseInt(document.getElementById("smoothingStrength").value, 10),
-        smoothing_method: document.getElementById("smoothingMethod").value,
-        sharpen_strength: parseInt(document.getElementById("sharpenStrength").value, 10),
-        median_filter_enabled: document.getElementById("medianFilterEnabled").checked,
-        median_filter_strength: parseInt(document.getElementById("medianFilterStrength").value, 10),
-        morphological_close_enabled: document.getElementById("morphologicalCloseEnabled").checked,
-        morphological_close_strength: parseInt(document.getElementById("morphologicalCloseStrength").value, 10),
-        drop_tiny_blobs_enabled: document.getElementById("dropTinyBlobsEnabled").checked,
-        drop_tiny_blobs_min_size: parseInt(document.getElementById("dropTinyBlobsMinSize").value, 10)
-    };
-}
+            return {
+                limit_colors: document.getElementById("limitColors").checked,
+                color_reduction_method: document.getElementById("colorReductionMethod").value,
+                target_colors: parseInt(document.getElementById("targetColors").value, 10),
+                upscale_factor: parseInt(document.getElementById("upscaleFactor").value, 10),
+                remove_background: document.getElementById("removeBackground").checked,
+                background_mode: document.getElementById("backgroundMode").value,
+                rembg_model: document.getElementById("rembgModel").value,
+                smoothing_strength: parseInt(document.getElementById("smoothingStrength").value, 10),
+                smoothing_method: document.getElementById("smoothingMethod").value,
+                sharpen_strength: parseInt(document.getElementById("sharpenStrength").value, 10),
+                median_filter_enabled: document.getElementById("medianFilterEnabled").checked,
+                median_filter_strength: parseInt(document.getElementById("medianFilterStrength").value, 10),
+                morphological_close_enabled: document.getElementById("morphologicalCloseEnabled").checked,
+                morphological_close_strength: parseInt(document.getElementById("morphologicalCloseStrength").value, 10),
+                drop_tiny_blobs_enabled: document.getElementById("dropTinyBlobsEnabled").checked,
+                drop_tiny_blobs_min_size: parseInt(document.getElementById("dropTinyBlobsMinSize").value, 10)
+            };
+        }
+
         function showError(msg) { errorDiv.innerText = msg; errorDiv.style.display = "block"; }
         function clearError() { errorDiv.innerText = ""; errorDiv.style.display = "none"; }
 
@@ -274,6 +326,7 @@
             viewOriginalBtn.classList.add("active");
             viewProcessedBtn.classList.remove("active");
         }
+
         function showProcessedView() {
             if (!hasProcessedImage) return;
             originalImg.style.display = "none";
@@ -285,29 +338,37 @@
 
         viewOriginalBtn.addEventListener("click", showOriginalView);
         viewProcessedBtn.addEventListener("click", showProcessedView);
-        resetBtn.addEventListener("click", function() { applyDefaults(); clearError(); });
+
+        resetBtn.addEventListener("click", function() {
+            applyDefaults();
+            clearError();
+        });
 
         updateBtn.addEventListener("click", async function() {
             clearError();
             const settings = readSettings();
             updateBtn.disabled = true;
             const originalText = updateBtn.innerText;
-            updateBtn.innerText = "Processing...";
+            updateBtn.innerText = settings.remove_background ? "Removing background..." : "Processing...";
+
             try {
                 const response = await fetch("/api/preprocess/" + FILE_ID, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(settings)
                 });
+
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.detail || "Preprocess failed.");
-                const bust = "?t=" + Date.now();
-                processedImg.src = data.processed_download_url + bust;
+
+                processedImg.src = data.processed_download_url + "?t=" + Date.now();
                 hasProcessedImage = true;
                 viewProcessedBtn.disabled = false;
                 showProcessedView();
+
                 sessionStorage.setItem("cleanupSettings:" + FILE_ID, JSON.stringify(settings));
                 sessionStorage.setItem("cleanupReady:" + FILE_ID, "true");
+
                 continueBtn.disabled = false;
             } catch (err) {
                 showError(err.message);

@@ -10,3 +10,5 @@ jinja2
 scikit-learn
 scikit-image
 svgpathtools
+rembg
+onnxruntime
